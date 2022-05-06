@@ -32,7 +32,7 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $user->createToken('AppName')->plainTextToken,
             'token_type' => 'Bearer',
-            'expires_at' => Carbon::parse(Carbon::now()->addMinute(6))->toDateTimeString()
+            'expires_at' => Carbon::parse(Carbon::now()->addMinutes(6))->toDateTimeString()
         ];
     }
 

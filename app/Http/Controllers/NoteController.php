@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Note;
+use App\Http\Requests\NoteRequest;
 
 class NoteController extends Controller
 {
@@ -17,7 +18,7 @@ class NoteController extends Controller
         return $note;
     }
 
-    public function store(Request $request)
+    public function store(NoteRequest $request)
     {
         $note = Note::create($request->all());
 

@@ -11,11 +11,13 @@ use App\Models\Note;
 class NoteTest extends TestCase
 {
     use RefreshDatabase;
+
     protected function authenticate(){
         $user = User::factory()->create();
         $token = $user->createToken('AppName')->plainTextToken;
         return ['Authorization' => "Bearer $token"];
     }
+
     public function testsNotesAreCreatedCorrectly()
     {
         $headers = $this->authenticate();
@@ -27,6 +29,54 @@ class NoteTest extends TestCase
         $this->json('POST', '/api/notes', $payload, $headers)
             ->assertStatus(201)
             ->assertJson(['id' => 1, 'title' => 'Lorem', 'body' => 'Ipsum']);
+    }
+
+    public function testsRequireTitleWhenUserIsCreated()
+    {
+        $headers = $this->authenticate();
+        $payload = ['body' => 'Ipsum'];
+        $this->json('POST', '/api/notes', $payload, $headers)
+            ->assertStatus(422)
+            ->assertJson(
+                [
+                    "message" =>  "the provided data is not valid",
+                    "errors" =>  [
+                        "title" =>  ["The title field is required."],
+                    ]
+                ]
+            );
+    }
+
+    public function testsRequireBodyWhenUserIsCreated()
+    {
+        $headers = $this->authenticate();
+        $payload = ['title' => 'Ipsum'];
+        $this->json('POST', '/api/notes', $payload, $headers)
+            ->assertStatus(422)
+            ->assertJson(
+                [
+                    "message" =>  "the provided data is not valid",
+                    "errors" =>  [
+                        "body" =>  ["The body field is required."],
+                    ]
+                ]
+            );
+    }
+
+    public function testsNotesAreCreatedOk()
+    {
+        $headers = $this->authenticate();
+        $payload = [
+            'title' => 'Lorem',
+            'body' => 'Ipsum',
+        ];
+
+        $response = $this->json('POST', '/api/notes', $payload, $headers);
+
+        $this->assertCount(1, Note::all());
+        $note = Note::first();
+        $this->assertEquals($note->title, 'Lorem');
+        $this->assertEquals($note->body, 'Ipsum');
     }
 
     public function testsNotesAreUpdatedCorrectly()
@@ -62,7 +112,8 @@ class NoteTest extends TestCase
         $this->json('DELETE', '/api/notes/' . $note->id, [], $headers)
             ->assertStatus(204);
     }
-    public function testFindNoteCorrectly()
+
+    public function testsFindNoteCorrectly()
     {
         $headers = $this->authenticate();
         Note::factory()->create([
@@ -75,10 +126,25 @@ class NoteTest extends TestCase
             ->assertJson(
                 [ 'title' => 'Second Article', 'body' => 'Second Body' ]
             );
-
-        //$response->assertStatus(200);
     }
-    public function testArticlesAreListedCorrectly()
+
+    public function testsCouldNotFindNote()
+    {
+        //$this->withoutExceptionHandling();
+        $headers = $this->authenticate();
+        Note::factory()->create([
+            'title' => 'Second Article',
+            'body' => 'Second Body'
+        ]);
+
+        $response = $this->json('GET', '/api/notes/2', [], $headers)
+            ->assertStatus(404)
+            ->assertJson(
+                [ "message"=> "Record not found." ]
+            );
+    }
+
+    public function testsNotesAreListedCorrectly()
     {
         Note::factory()->create([
             'title' => 'First Article',
